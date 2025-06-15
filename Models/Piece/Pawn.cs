@@ -1,6 +1,6 @@
-﻿using Rules;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Reflection.Metadata;
 using System.Text;
@@ -14,31 +14,32 @@ namespace Models.Piece
         internal Pawn(PieceColor color, Coordinates startPos) : base(color, startPos)
         {
             Symbol = 'P';
+            Value = 1;
         }
 
-        public override List<Coordinates> GetAvailableMoves(IPiece[,] board)
+        protected override void UpdateAvailableMoves(Board board)
         {
-            AvailableMoves.Clear();
+            _availableMoves.Clear();
             if (!HasMoved)
             {
                 if (Color == PieceColor.White)
                 {
                     for (int x = Position.x + 1; x<= Position.x + 2; x++)
                     {
-                        if (x < 0 || x>= Constants.LENGHT_BOARD || board[x, Position.y] != null)
+                        if (x < 0 || x>= Constants.LENGHT_BOARD || board.CheckPos(x, Position.y))
                             break;
-                        if (board[x, Position.y] == null)
-                            AvailableMoves.Add(new Coordinates(x, Position.y));
+                        if (!board.CheckPos(x, Position.y))
+                            _availableMoves.Add(new Coordinates(x, Position.y));
                     }
                 }
                 else
                 {
                     for (int x = Position.x - 1; x>= Position.x - 2; x--)
                     {
-                        if (x < 0 || x>= Constants.LENGHT_BOARD || board[x, Position.y] != null)
+                        if (x < 0 || x>= Constants.LENGHT_BOARD || board.CheckPos(x, Position.y))
                             break;
-                        if (board[x, Position.y] == null)
-                            AvailableMoves.Add(new Coordinates(x, Position.y));
+                        if (!board.CheckPos(x, Position.y))
+                            _availableMoves.Add(new Coordinates(x, Position.y));
                     }
                 }
             }
@@ -50,15 +51,14 @@ namespace Models.Piece
                 else
                     x -= 1;
 
-                if (x >= 0 && x < Constants.LENGHT_BOARD && board[x, Position.y] == null)
-                    AvailableMoves.Add(new Coordinates(x, Position.y));
+                if (x >= 0 && x < Constants.LENGHT_BOARD && !board.CheckPos(x, Position.y))
+                    _availableMoves.Add(new Coordinates(x, Position.y));
             }
-            return AvailableMoves;
         }
 
-        public override List<Coordinates> GetAvailableAttack(IPiece[,] board)
+        protected override void UpdateAvailableAttack(Board board)
         {
-            AvailableAttack.Clear();
+            _availableAttack.Clear();
             int x = Position.x;
             if (Color == PieceColor.White)
                 x += 1;
@@ -72,20 +72,17 @@ namespace Models.Piece
                 y = Position.y - 1;
                 AddAvailableAttack(board, x, y);
             }
-
-            return AvailableAttack;
         }
 
-        private void AddAvailableAttack(IPiece[,] board, int x, int y)
+        private void AddAvailableAttack(Board board, int x, int y)
         {
-            if (y >= 0 && y < Constants.LENGHT_BOARD)
-                if (board[x, y] != null && board[x, y].Color != Color)
-                    AvailableAttack.Add(new Coordinates(x, y));
-        }
-
-        public override bool IsValidMove(Coordinates newPosition, IPiece[,] board)
-        {
-            throw new NotImplementedException();
+            if (x >= 0 && x < Constants.LENGHT_BOARD && y >= 0 && y < Constants.LENGHT_BOARD)
+            {
+                var coord = new Coordinates(x, y);
+                var piece = board.GetPieceByCoordinates(x, y);
+                PieceColor color = piece != null ? piece.Color : PieceColor.Null;
+                _availableAttack.Add(coord, color);
+            }
         }
     }
 }

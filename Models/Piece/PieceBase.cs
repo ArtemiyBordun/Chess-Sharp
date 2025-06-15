@@ -9,31 +9,51 @@ namespace Models.Piece
     internal abstract class PieceBase : IPiece
     {
         public char Symbol { get; protected set; }
+        public int Value { get; protected set; }
         public PieceColor Color { get; private set; }
         public Coordinates Position { get; set; }
-        public List<Coordinates> AvailableMoves { get; set; }
-        public List<Coordinates> AvailableAttack { get; set; }
+        protected List<Coordinates> _availableMoves { get; set; }
+        protected Dictionary<Coordinates, PieceColor> _availableAttack { get; set; }
         public bool HasMoved { get; protected set; }
 
         protected PieceBase(PieceColor color, Coordinates startPos)
         {
             Color = color;
             Position = startPos;
-            AvailableMoves = new List<Coordinates>();
-            AvailableAttack = new List<Coordinates>();
+            _availableMoves = new List<Coordinates>();
+            _availableAttack = new Dictionary<Coordinates, PieceColor>();
             HasMoved = false;
         }
-
-        public abstract List<Coordinates> GetAvailableMoves(IPiece[,] board);
-        public abstract List<Coordinates> GetAvailableAttack(IPiece[,] board);
-        public abstract bool IsValidMove(Coordinates newPosition, IPiece[,] board);
-
-        public virtual void Move(Coordinates newPosition, IPiece[,] board)
+        public void UpdateStatus(Board board)
         {
-            board[Position.x, Position.y] = null;
-            board[newPosition.x, newPosition.y] = this;
+            UpdateAvailableMoves(board);
+            UpdateAvailableAttack(board);
+        }
+        protected abstract void UpdateAvailableMoves(Board board);
+        protected abstract void UpdateAvailableAttack(Board board);
+
+        public List<Coordinates> GetAvailableMoves() => _availableMoves;
+        public Dictionary<Coordinates, PieceColor> GetAvailableAttack() => _availableAttack;
+
+        public virtual void Move(Coordinates newPosition, Board board)
+        {
+            board.Move(Position, newPosition, this);
             Position = newPosition;
             HasMoved = true;
+        }
+        public virtual bool IsTaking(Coordinates newPosition, Board board)
+        {
+            if (board.CheckPos(newPosition))
+                return true;
+            return false;
+        }
+        public virtual bool IsValidMove(Coordinates newPosition, Board board)
+        {
+            bool isInMoves = _availableMoves.Any(c => c.x == newPosition.x && c.y == newPosition.y);
+
+            bool isInAttack = _availableAttack.Any(c => c.Value != Color && c.Key.x == newPosition.x && c.Key.y == newPosition.y);
+
+            return isInMoves || isInAttack;
         }
     }
 }

@@ -10,11 +10,13 @@ namespace Models
     {
         public int x;
         public int y;
+        public bool IsFree;
 
         public Coordinates(int x, int y)
         {
             this.x = x;
             this.y = y;
+            IsFree = true;
         }
     }
 }
